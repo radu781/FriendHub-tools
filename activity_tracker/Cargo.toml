@@ -1,0 +1,11 @@
+[package]
+name = "activity_tracker"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+database = { path = "../database" }
+fake = "2.6.1"
+tokio = "1.29.1"
