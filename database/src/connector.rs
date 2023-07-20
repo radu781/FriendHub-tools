@@ -9,13 +9,18 @@ use std::{
 
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
-use sqlx::{postgres::PgPoolOptions, types::Uuid, Pool, Postgres};
+use sqlx::{
+    postgres::{PgPoolOptions, PgRow},
+    query,
+    types::Uuid,
+    FromRow, Pool, Postgres,
+};
 
-use super::tables::{Delete, Insert, Table};
+use crate::{Delete, Insert, Table, User};
 
 pub struct DBConnection {
     pool: Pool<Postgres>,
-    pub content: HashMap<String, Vec<UuidWrapper>>,
+    content: HashMap<String, Vec<UuidWrapper>>,
 }
 
 impl DBConnection {
@@ -45,12 +50,36 @@ impl DBConnection {
         self.add(table.table_type(), &table.id())
     }
 
+    pub async fn select(&mut self, table: &(impl Insert + Table)) {}
+
+    pub async fn select_id<'r, Tbl>(&mut self, table: TableType, id: &String) -> Option<User>
+    where
+        Tbl: Table + Send + Unpin + FromRow<'r, PgRow>,
+    {
+        // TODO: bind here
+        let query = format!("SELECT * FROM {} WHERE id='{}'", table.to_string(), id);
+
+        sqlx::query_as::<_, User>(query.as_str())
+            // .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .unwrap()
+    }
+
     pub async fn delete(&mut self, table: &(impl Delete + Table)) {
         table.delete(&self.pool).await;
         self.delete_cached(table.table_type(), &table.id());
     }
 
-    pub fn delete_cached(&mut self, table: TableType, id: &Uuid) {
+    pub async fn delete_id(&mut self, table: TableType, id: &Uuid) {
+        query(format!("DELETE FROM {} WHERE id='{}'", table.to_string(), id).as_str())
+            .execute(&self.pool)
+            .await
+            .unwrap();
+        self.delete_cached(table, id);
+    }
+
+    fn delete_cached(&mut self, table: TableType, id: &Uuid) {
         if let Some(v) = self.content.get_mut(&table.to_string()) {
             v.retain(|e| e.0 == *id);
             if v.is_empty() {
@@ -71,7 +100,7 @@ impl DBConnection {
 
 impl Drop for DBConnection {
     fn drop(&mut self) {
-        let text = serde_json::to_string(&self.content).expect("serde serialization failed");
+        let text = serde_json::to_string_pretty(&self.content).expect("serde serialization failed");
         fs::write("created.json", text).expect("failed writing to file");
     }
 }
@@ -100,12 +129,18 @@ impl<'de> Deserialize<'de> for UuidWrapper {
 
 pub enum TableType {
     Users,
+    Comments,
+    Votes,
+    Posts,
 }
 
 impl ToString for TableType {
     fn to_string(&self) -> String {
         match self {
             TableType::Users => "users".to_owned(),
+            TableType::Comments => "comments".to_owned(),
+            TableType::Votes => "votes".to_owned(),
+            TableType::Posts => "posts".to_owned(),
         }
     }
 }

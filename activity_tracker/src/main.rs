@@ -1,14 +1,21 @@
-use std::env;
-use fake::{Dummy, Fake, Faker};
+use std::{env, process::exit};
 
 use crate::compute::*;
-use database::{DBConnection, TableType, User, Adjust};
-use tokio::main;
 mod compute;
+
+const UUID_NOT_FOUND: i32 = 1;
+const NO_ARGS: i32 = 2;
 
 #[tokio::main]
 async fn main() {
-    let b = env::var("DATABASE_URL").unwrap();
-    let a = DBConnection::new().await;
-    Faker.fake::<User>().adjust();
+    match env::args().skip(1).collect::<Vec<_>>().first() {
+        Some(val) => {
+            let res = compute(val).await;
+            match res {
+                Some(score) => println!("{score}"),
+                None => exit(UUID_NOT_FOUND),
+            }
+        }
+        None => exit(NO_ARGS),
+    }
 }

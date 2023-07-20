@@ -1,44 +1,19 @@
+use std::str::FromStr;
+
 use async_trait::async_trait;
 use fake::faker::address::en::{CityName, CountryName};
-use fake::faker::chrono::en::DateTime;
 use fake::faker::internet::raw::SafeEmail;
 use fake::faker::name::en::FirstName;
 use fake::faker::name::en::LastName;
 use fake::locales::EN;
-use fake::uuid::UUIDv4;
-use fake::{Dummy, Fake, Faker};
-use rand::rngs::StdRng;
+use fake::Dummy;
 use rand::Rng;
+use sqlx::postgres::PgRow;
 use sqlx::types::chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use sqlx::types::Uuid;
-use sqlx::{query, Pool, Postgres};
+use sqlx::{query, FromRow, Pool, Postgres, Row};
 
-// use openssl::sha::sha256;
-
-use crate::connector::TableType;
-pub struct Comments {}
-
-pub struct ImGroupMembers {}
-
-pub struct ImGroups {}
-
-pub struct Message {}
-
-pub struct PGroupMembers {}
-
-pub struct Pages {}
-
-pub struct PagesGroups {}
-
-pub struct Posts {}
-
-pub struct Relationships {}
-
-pub struct Replies {}
-
-pub struct Scripts {}
-
-pub struct Tokens {}
+use crate::{Adjust, Delete, Insert, Table, TableType};
 
 #[derive(Debug, Dummy)]
 pub struct User {
@@ -62,27 +37,6 @@ pub struct User {
     email: String,
     password: String,
     permissions: String,
-}
-
-pub struct Votes {}
-
-pub trait Adjust {
-    fn adjust(self) -> Self;
-}
-
-pub trait Table {
-    fn table_type(&self) -> TableType;
-    fn id(&self) -> Uuid;
-}
-
-#[async_trait]
-pub trait Insert {
-    async fn insert(&self, pool: &Pool<Postgres>);
-}
-
-#[async_trait]
-pub trait Delete {
-    async fn delete(&self, pool: &Pool<Postgres>);
 }
 
 impl Table for User {
@@ -112,7 +66,10 @@ impl Adjust for User {
         // let password = sha256(self.password.as_bytes()).to_string();
         // self.password = password;
         let password: [u8; 32] = rng.gen();
-        self.password = password.iter().map(|byte| format!("{:02x}", byte)).collect();
+        self.password = password
+            .iter()
+            .map(|byte| format!("{:02x}", byte))
+            .collect();
 
         let date = NaiveDate::from_ymd_opt(
             rng.gen_range(2020..=2023),
@@ -155,5 +112,61 @@ impl Delete for User {
             .execute(pool)
             .await
             .unwrap();
+    }
+}
+
+impl<'r> FromRow<'r, PgRow> for User {
+    fn from_row(row: &PgRow) -> Result<Self, sqlx::Error> {
+        Ok(User {
+            id: Uuid::from_str(row.try_get("id")?).unwrap(),
+            first_name: row.try_get("first_name")?,
+            middle_name: row.try_get("middle_name")?,
+            last_name: row.try_get("last_name")?,
+            join_time: row.try_get("join_time")?,
+            country: row.try_get("country")?,
+            city: row.try_get("city")?,
+            education: row.try_get("education")?,
+            extra: row.try_get("extra")?,
+            profile_picture: row.try_get("profile_picture")?,
+            banner_picture: row.try_get("banner_picture")?,
+            email: row.try_get("email")?,
+            password: row.try_get("password")?,
+            permissions: row.try_get("permissions")?,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Adjust, DBConnection, Table, User};
+    use fake::{Fake, Faker};
+
+    #[test]
+    fn create_instance() {
+        let user = Faker.fake::<User>().adjust();
+        assert_ne!(user.first_name, "".to_owned());
+        assert_ne!(user.middle_name, "".to_owned());
+        assert_ne!(user.last_name, "".to_owned());
+    }
+
+    #[tokio::test]
+    async fn insert_in_db() {
+        let user = Faker.fake::<User>().adjust();
+        let mut db = DBConnection::new().await;
+        db.insert(&user).await;
+
+        let res = db.select_id::<User>(user.table_type(), &user.id).await;
+        assert_eq!(res.unwrap().id, user.id);
+    }
+
+    #[tokio::test]
+    async fn delete_in_db() {
+        let user = Faker.fake::<User>().adjust();
+        let mut db = DBConnection::new().await;
+        db.insert(&user).await;
+
+        db.delete_id(user.table_type(), &user.id).await;
+        let res = db.select_id::<User>(user.table_type(), &user.id).await;
+        assert!(res.is_none());
     }
 }

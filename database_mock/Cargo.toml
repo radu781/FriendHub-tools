@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+database = { path = "../database" }
 async-trait = "0.1.68"
 dotenv = "0.15.0"
 fake = { version = "2.6.1", features = [ "derive", "uuid", "chrono", "geo" ] }

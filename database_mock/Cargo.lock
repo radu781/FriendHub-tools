@@ -227,10 +227,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "database"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "dotenv",
+ "fake",
+ "lazy_static",
+ "rand",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+]
+
+[[package]]
 name = "database_mock"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "database",
  "dotenv",
  "fake",
  "lazy_static",
