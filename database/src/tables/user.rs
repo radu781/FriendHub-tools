@@ -13,7 +13,7 @@ use sqlx::types::chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use sqlx::types::Uuid;
 use sqlx::{query, FromRow, Pool, Postgres, Row};
 
-use crate::{Adjust, Delete, Insert, Table, TableType};
+use crate::{Adjust, Delete, Insert, Table, TableType, ToTableType, Update};
 
 #[derive(Debug, Dummy)]
 pub struct User {
@@ -46,6 +46,12 @@ impl Table for User {
 
     fn id(&self) -> Uuid {
         self.id
+    }
+}
+
+impl ToTableType for User {
+    fn to_table_type() -> TableType {
+        TableType::Users
     }
 }
 
@@ -93,15 +99,39 @@ impl Adjust for User {
 impl Insert for User {
     async fn insert(&self, pool: &Pool<Postgres>) {
         query!(
-            r#"INSERT INTO users VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)"#,
-            &self.id.to_string(), self.first_name, self.middle_name, self.last_name,
-            self.join_time, self.country, self.city, self.education,
-            self.extra, self.profile_picture, self.banner_picture, self.email,
-            self.password, self.permissions
+            "INSERT INTO users VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
+            &self.id.to_string(),
+            self.first_name,
+            self.middle_name,
+            self.last_name,
+            self.join_time,
+            self.country,
+            self.city,
+            self.education,
+            self.extra,
+            self.profile_picture,
+            self.banner_picture,
+            self.email,
+            self.password,
+            self.permissions
         )
         .execute(pool)
         .await
         .unwrap();
+    }
+}
+
+#[async_trait]
+impl Update for User {
+    async fn update(&self, pool: &Pool<Postgres>) {
+        query!(
+            "UPDATE users SET first_name=$1 WHERE id=$2",
+            &self.first_name,
+            &self.id.to_string()
+        )
+        .execute(pool)
+        .await
+        .ok();
     }
 }
 
@@ -151,22 +181,52 @@ mod tests {
 
     #[tokio::test]
     async fn insert_in_db() {
-        let user = Faker.fake::<User>().adjust();
-        let mut db = DBConnection::new().await;
-        db.insert(&user).await;
+        let (mut db, user) = setup().await;
 
-        let res = db.select_id::<User>(user.table_type(), &user.id).await;
+        let res = db.select_by_id::<User>(&user.id.to_string()).await;
         assert_eq!(res.unwrap().id, user.id);
+
+        teardown(db, user).await;
     }
 
     #[tokio::test]
-    async fn delete_in_db() {
+    async fn delete_in_db_id() {
+        let (mut db, user) = setup().await;
+
+        db.delete_id(user.table_type(), &user.id).await;
+        let res = db.select_by_id::<User>(&user.id.to_string()).await;
+        assert!(res.is_none());
+    }
+
+    #[tokio::test]
+    async fn delete_in_db_whole() {
+        let (mut db, user) = setup().await;
+
+        db.delete(&user).await;
+        let res = db.select_by_id::<User>(&user.id.to_string()).await;
+        assert!(res.is_none());
+    }
+
+    #[tokio::test]
+    async fn update_in_db() {
+        let (mut db, mut user) = setup().await;
+
+        user.first_name = "EDITED".to_string();
+        db.update(&user).await;
+        let table_user = db.select_by_id::<User>(&user.id.to_string()).await.unwrap();
+        assert_eq!(table_user.first_name, "EDITED".to_string());
+
+        teardown(db, user).await;
+    }
+
+    async fn setup() -> (DBConnection, User) {
         let user = Faker.fake::<User>().adjust();
         let mut db = DBConnection::new().await;
         db.insert(&user).await;
+        (db, user)
+    }
 
-        db.delete_id(user.table_type(), &user.id).await;
-        let res = db.select_id::<User>(user.table_type(), &user.id).await;
-        assert!(res.is_none());
+    async fn teardown(mut db: DBConnection, user: User) {
+        db.delete(&user).await;
     }
 }

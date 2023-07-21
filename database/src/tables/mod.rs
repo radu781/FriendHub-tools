@@ -22,6 +22,10 @@ pub trait Table {
     fn id(&self) -> Uuid;
 }
 
+pub trait ToTableType {
+    fn to_table_type() -> TableType;
+}
+
 #[async_trait]
 pub trait Insert {
     async fn insert(&self, pool: &Pool<Postgres>);

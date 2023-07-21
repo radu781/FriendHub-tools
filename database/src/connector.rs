@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     env,
+    fmt::Display,
     fs::{self, File},
     io::{BufRead, BufReader, Write},
     path::Path,
@@ -16,7 +17,7 @@ use sqlx::{
     FromRow, Pool, Postgres,
 };
 
-use crate::{Delete, Insert, Table, User};
+use crate::{Delete, Insert, Table, ToTableType, Update};
 
 pub struct DBConnection {
     pool: Pool<Postgres>,
@@ -41,38 +42,53 @@ impl DBConnection {
                 .connect(&env::var("DATABASE_URL").unwrap())
                 .await
                 .unwrap(),
-            content: serde_json::from_str(&content).unwrap(),
+            content: serde_json::from_str(if content.is_empty() {
+                "{}"
+            } else {
+                content.as_str()
+            })
+            .unwrap(),
         }
     }
 
-    pub async fn insert(&mut self, table: &(impl Insert + Table)) {
+    pub async fn insert<Tbl>(&mut self, table: &Tbl)
+    where
+        Tbl: Table + Insert,
+    {
         table.insert(&self.pool).await;
         self.add(table.table_type(), &table.id())
     }
 
-    pub async fn select(&mut self, table: &(impl Insert + Table)) {}
-
-    pub async fn select_id<'r, Tbl>(&mut self, table: TableType, id: &String) -> Option<User>
+    pub async fn select_by_id<Tbl>(&mut self, id: &String) -> Option<Tbl>
     where
-        Tbl: Table + Send + Unpin + FromRow<'r, PgRow>,
+        Tbl: Table + Send + Unpin + for<'r> FromRow<'r, PgRow> + ToTableType,
     {
         // TODO: bind here
-        let query = format!("SELECT * FROM {} WHERE id='{}'", table.to_string(), id);
+        let query = format!("SELECT * FROM {} WHERE id='{}'", Tbl::to_table_type(), id);
 
-        sqlx::query_as::<_, User>(query.as_str())
-            // .bind(id)
+        sqlx::query_as::<_, Tbl>(query.as_str())
             .fetch_optional(&self.pool)
             .await
             .unwrap()
     }
 
-    pub async fn delete(&mut self, table: &(impl Delete + Table)) {
+    pub async fn update<Tbl>(&mut self, table: &Tbl)
+    where
+        Tbl: Table + Update,
+    {
+        table.update(&self.pool).await;
+    }
+
+    pub async fn delete<Tbl>(&mut self, table: &Tbl)
+    where
+        Tbl: Table + Delete,
+    {
         table.delete(&self.pool).await;
         self.delete_cached(table.table_type(), &table.id());
     }
 
     pub async fn delete_id(&mut self, table: TableType, id: &Uuid) {
-        query(format!("DELETE FROM {} WHERE id='{}'", table.to_string(), id).as_str())
+        query(format!("DELETE FROM {} WHERE id='{}'", table, id).as_str())
             .execute(&self.pool)
             .await
             .unwrap();
@@ -134,13 +150,17 @@ pub enum TableType {
     Posts,
 }
 
-impl ToString for TableType {
-    fn to_string(&self) -> String {
-        match self {
-            TableType::Users => "users".to_owned(),
-            TableType::Comments => "comments".to_owned(),
-            TableType::Votes => "votes".to_owned(),
-            TableType::Posts => "posts".to_owned(),
-        }
+impl Display for TableType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match &self {
+                TableType::Users => "users",
+                TableType::Comments => "comments",
+                TableType::Votes => "votes",
+                TableType::Posts => "posts",
+            }
+        )
     }
 }
