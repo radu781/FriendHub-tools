@@ -1,25 +1,74 @@
-use database::{DBConnection, TableType, User};
+use database::{DBConnection, Post, User, Vote};
+use tokio::join;
 
-pub(crate) const POST_WEIGHT: u32 = 20;
-pub(crate) const VOTE_WEIGHT: u32 = 1;
-pub(crate) const FRIEND_ADD_WEIGHT: u32 = 5;
-pub(crate) const COMMENT_WEIGHT: u32 = 3;
-pub(crate) const REPLY_WEIGHT: u32 = 2;
-pub(crate) const STORY_WEIGHT: u32 = 10;
-pub(crate) const PHOTO_PROFILE_WEIGHT: u32 = 30;
-pub(crate) const PHOTO_BANNER_WEIGHT: u32 = 20;
+const POST_WEIGHT: u32 = 20;
+const VOTE_UPVOTE_WEIGHT: u32 = 2;
+const VOTE_DOWNVOTE_WEIGHT: u32 = 1;
+const FRIEND_ADD_WEIGHT: u32 = 5;
+const COMMENT_WEIGHT: u32 = 3;
+const REPLY_WEIGHT: u32 = 2;
+const STORY_WEIGHT: u32 = 10;
+const PHOTO_PROFILE_WEIGHT: u32 = 30;
+const PHOTO_BANNER_WEIGHT: u32 = 20;
 
-pub(crate) async fn compute(user_id: &String) -> Option<u32> {
-    let mut db = DBConnection::new().await;
-    let user = db.select_id::<User>(TableType::Users, user_id).await?;
-    Some(
-        POST_WEIGHT
-            + VOTE_WEIGHT
-            + FRIEND_ADD_WEIGHT
-            + COMMENT_WEIGHT
-            + REPLY_WEIGHT
-            + STORY_WEIGHT
-            + PHOTO_PROFILE_WEIGHT
-            + PHOTO_BANNER_WEIGHT,
-    )
+pub enum ComputeError {
+    UUID_NOT_FOUND,
+    NO_ARGS,
+}
+
+impl From<ComputeError> for i32 {
+    fn from(value: ComputeError) -> Self {
+        match value {
+            ComputeError::UUID_NOT_FOUND => 1,
+            ComputeError::NO_ARGS => 2,
+        }
+    }
+}
+
+pub(crate) async fn compute(user_id: &str, day: &str) -> Result<u32, ComputeError> {
+    let db = DBConnection::new().await;
+    db.select_by_id::<User>(&user_id.to_owned()).await.ok_or_else(|| ComputeError::UUID_NOT_FOUND)?;
+    let computer = Computer {
+        db,
+        user_id: user_id.to_owned(),
+        day: day.to_owned(),
+    };
+    let res = join!(computer.posts_score(), computer.vote_score());
+    Ok(res.0 + res.1)
+}
+
+struct Computer {
+    db: DBConnection,
+    user_id: String,
+    day: String,
+}
+
+impl Computer {
+    async fn posts_score(&self) -> u32 {
+        let posts = self
+            .db
+            .select_where::<Post>(vec![
+                ("owner_id", &self.user_id),
+                ("CAST(create_time AS DATE)", &self.day),
+            ])
+            .await;
+        posts.len() as u32 * POST_WEIGHT
+    }
+
+    async fn vote_score(&self) -> u32 {
+        let votes = self
+            .db
+            .select_where::<Vote>(vec![("author_id", &self.user_id)])
+            .await;
+        let mut upvote_score = 0;
+        let mut downvote_score = 0;
+        votes.iter().for_each(|v| {
+            if v.value.is_upvote() {
+                upvote_score += 1
+            } else if v.value.is_downvote() {
+                downvote_score += 1
+            }
+        });
+        upvote_score * VOTE_UPVOTE_WEIGHT + downvote_score * VOTE_DOWNVOTE_WEIGHT
+    }
 }

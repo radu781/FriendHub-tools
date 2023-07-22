@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use sqlx::{types::Uuid, Pool, Postgres};
 
-use crate::{Delete, Insert, Select, Table, TableType, Update};
+use crate::{Delete, Insert, Select, Table, TableType, Update, ToTableType};
 
 pub struct Comment {
     pub id: Uuid,
@@ -18,6 +18,12 @@ impl Table for Comment {
 
     fn id(&self) -> Uuid {
         self.id
+    }
+}
+
+impl ToTableType for Comment {
+    fn to_table_type() -> TableType {
+        TableType::Comments
     }
 }
 

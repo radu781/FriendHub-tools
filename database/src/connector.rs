@@ -5,6 +5,7 @@ use std::{
     fs::{self, File},
     io::{BufRead, BufReader, Write},
     path::Path,
+    str::FromStr,
     vec,
 };
 
@@ -59,7 +60,7 @@ impl DBConnection {
         self.add(table.table_type(), &table.id())
     }
 
-    pub async fn select_by_id<Tbl>(&mut self, id: &String) -> Option<Tbl>
+    pub async fn select_by_id<Tbl>(&self, id: &String) -> Option<Tbl>
     where
         Tbl: Table + Send + Unpin + for<'r> FromRow<'r, PgRow> + ToTableType,
     {
@@ -72,7 +73,23 @@ impl DBConnection {
             .unwrap()
     }
 
-    pub async fn update<Tbl>(&mut self, table: &Tbl)
+    pub async fn select_where<Tbl>(&self, pairs: Vec<(&'static str, &String)>) -> Vec<Tbl>
+    where
+        Tbl: Table + Send + Unpin + for<'r> FromRow<'r, PgRow> + ToTableType,
+    {
+        let mut query = format!("SELECT * FROM {} WHERE", Tbl::to_table_type());
+        for (key, val) in pairs {
+            query.push_str(format!(" {key}='{val}' AND").as_str());
+        }
+        let query = query.trim_end_matches(" AND");
+
+        sqlx::query_as::<_, Tbl>(query)
+            .fetch_all(&self.pool)
+            .await
+            .unwrap()
+    }
+
+    pub async fn update<Tbl>(&self, table: &Tbl)
     where
         Tbl: Table + Update,
     {
@@ -87,12 +104,12 @@ impl DBConnection {
         self.delete_cached(table.table_type(), &table.id());
     }
 
-    pub async fn delete_id(&mut self, table: TableType, id: &Uuid) {
+    pub async fn delete_by_id(&mut self, table: TableType, id: &String) {
         query(format!("DELETE FROM {} WHERE id='{}'", table, id).as_str())
             .execute(&self.pool)
             .await
             .unwrap();
-        self.delete_cached(table, id);
+        self.delete_cached(table, &Uuid::from_str(id.as_str()).unwrap());
     }
 
     fn delete_cached(&mut self, table: TableType, id: &Uuid) {
@@ -144,10 +161,10 @@ impl<'de> Deserialize<'de> for UuidWrapper {
 }
 
 pub enum TableType {
-    Users,
     Comments,
-    Votes,
     Posts,
+    Users,
+    Votes,
 }
 
 impl Display for TableType {
@@ -156,10 +173,10 @@ impl Display for TableType {
             f,
             "{}",
             match &self {
-                TableType::Users => "users",
                 TableType::Comments => "comments",
-                TableType::Votes => "votes",
                 TableType::Posts => "posts",
+                TableType::Users => "users",
+                TableType::Votes => "votes",
             }
         )
     }

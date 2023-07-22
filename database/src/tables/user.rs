@@ -9,31 +9,31 @@ use fake::locales::EN;
 use fake::Dummy;
 use rand::Rng;
 use sqlx::postgres::PgRow;
-use sqlx::types::chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+use sqlx::types::chrono::{NaiveDate, NaiveDateTime, NaiveTime, DateTime, Local};
 use sqlx::types::Uuid;
 use sqlx::{query, FromRow, Pool, Postgres, Row};
 
 use crate::{Adjust, Delete, Insert, Table, TableType, ToTableType, Update};
 
-#[derive(Debug, Dummy)]
+#[derive(Debug/* , Dummy */)]
 pub struct User {
     pub id: Uuid,
-    #[dummy(faker = "FirstName()")]
+    // #[dummy(faker = "FirstName()")]
     pub first_name: String,
-    #[dummy(faker = "FirstName()")]
+    // #[dummy(faker = "FirstName()")]
     middle_name: String,
-    #[dummy(faker = "LastName()")]
+    // #[dummy(faker = "LastName()")]
     last_name: String,
-    join_time: NaiveDateTime,
-    #[dummy(faker = "CountryName()")]
+    join_time: DateTime<Local>,
+    // #[dummy(faker = "CountryName()")]
     country: String,
-    #[dummy(faker = "CityName()")]
+    // #[dummy(faker = "CityName()")]
     city: String,
-    education: String,
-    extra: String,
+    education: Option<String>,
+    extra: Option<String>,
     profile_picture: String,
-    banner_picture: String,
-    #[dummy(faker = "SafeEmail(EN)")]
+    banner_picture: Option<String>,
+    // #[dummy(faker = "SafeEmail(EN)")]
     email: String,
     password: String,
     permissions: String,
@@ -63,7 +63,7 @@ impl Adjust for User {
         let mut rng = rand::thread_rng();
         let educations = vec!["highschool", "college"];
         let i = rng.gen_range(0..educations.len());
-        self.education = educations[i].to_owned();
+        self.education = Some(educations[i].to_owned());
 
         let permissions = vec!["admin", "tester", "demo"];
         let i = rng.gen_range(0..permissions.len());
@@ -89,7 +89,7 @@ impl Adjust for User {
             rng.gen_range(0..60),
         )
         .expect("failed to create time");
-        self.join_time = NaiveDateTime::new(date, time);
+        self.join_time = DateTime::default();
 
         self
     }
@@ -152,7 +152,7 @@ impl<'r> FromRow<'r, PgRow> for User {
             first_name: row.try_get("first_name")?,
             middle_name: row.try_get("middle_name")?,
             last_name: row.try_get("last_name")?,
-            join_time: row.try_get("join_time")?,
+            join_time: DateTime::default(),
             country: row.try_get("country")?,
             city: row.try_get("city")?,
             education: row.try_get("education")?,
@@ -193,7 +193,7 @@ mod tests {
     async fn delete_in_db_id() {
         let (mut db, user) = setup().await;
 
-        db.delete_id(user.table_type(), &user.id).await;
+        db.delete_by_id(user.table_type(), &user.id.to_string()).await;
         let res = db.select_by_id::<User>(&user.id.to_string()).await;
         assert!(res.is_none());
     }
