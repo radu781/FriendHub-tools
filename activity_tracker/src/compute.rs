@@ -12,22 +12,22 @@ const PHOTO_PROFILE_WEIGHT: u32 = 30;
 const PHOTO_BANNER_WEIGHT: u32 = 20;
 
 pub enum ComputeError {
-    UUID_NOT_FOUND,
-    NO_ARGS,
+    UuidNotFound,
+    NoArgs,
 }
 
 impl From<ComputeError> for i32 {
     fn from(value: ComputeError) -> Self {
         match value {
-            ComputeError::UUID_NOT_FOUND => 1,
-            ComputeError::NO_ARGS => 2,
+            ComputeError::UuidNotFound => 1,
+            ComputeError::NoArgs => 2,
         }
     }
 }
 
 pub(crate) async fn compute(user_id: &str, day: &str) -> Result<u32, ComputeError> {
     let db = DBConnection::new().await;
-    db.select_by_id::<User>(&user_id.to_owned()).await.ok_or_else(|| ComputeError::UUID_NOT_FOUND)?;
+    db.select_by_id::<User>(&user_id.to_owned()).await.ok_or(ComputeError::UuidNotFound)?;
     let computer = Computer {
         db,
         user_id: user_id.to_owned(),

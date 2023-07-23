@@ -1,23 +1,15 @@
-use std::str::FromStr;
-
 use async_trait::async_trait;
-use sqlx::{
-    postgres::PgRow,
-    types::{
-        chrono::{DateTime, Local},
-        Uuid,
-    },
-    FromRow, Pool, Postgres, Row,
-};
+use sqlx::{postgres::PgRow, query_as, FromRow, Pool, Postgres, Row};
 
-use crate::{Delete, Insert, Select, Table, TableType, ToTableType, Update};
+use crate::{DateTimeWrapper, Delete, Insert, Select, Table, TableType, Update, UuidWrapper};
 
 pub struct Post {
-    pub id: Uuid,
-    pub owner_id: Uuid,
-    pub create_time: DateTime<Local>,
-    pub likes: u32,
-    pub dislikes: u32,
+    pub id: UuidWrapper,
+    pub owner_id: UuidWrapper,
+    pub create_time: DateTimeWrapper,
+    // TODO: make u32
+    pub likes: i32,
+    pub dislikes: i32,
     pub text: String,
     pub image: Option<String>,
     pub video: Option<String>,
@@ -29,14 +21,12 @@ impl Table for Post {
         TableType::Posts
     }
 
-    fn id(&self) -> Uuid {
-        self.id
-    }
-}
-
-impl ToTableType for Post {
     fn to_table_type() -> TableType {
         TableType::Posts
+    }
+
+    fn id(&self) -> &UuidWrapper {
+        &self.id
     }
 }
 
@@ -47,7 +37,25 @@ impl Insert for Post {
 
 #[async_trait]
 impl Select for Post {
-    async fn select(&self, pool: &Pool<Postgres>) {}
+    async fn select_by_id(pool: &Pool<Postgres>, id: &String) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        query_as!(Self, "SELECT * FROM posts WHERE id=$1", &id.to_string())
+            .fetch_optional(pool)
+            .await
+            .unwrap()
+    }
+
+    async fn select_where(pool: &Pool<Postgres>, query: &str) -> Vec<Self>
+    where
+        Self: Sized,
+    {
+        query_as::<_, Self>(&("SELECT * FROM posts ".to_owned() + query))
+            .fetch_all(pool)
+            .await
+            .unwrap()
+    }
 }
 
 #[async_trait]
@@ -63,9 +71,9 @@ impl Delete for Post {
 impl<'r> FromRow<'r, PgRow> for Post {
     fn from_row(row: &PgRow) -> Result<Self, sqlx::Error> {
         Ok(Post {
-            id: Uuid::from_str(row.try_get("id")?).unwrap(),
-            owner_id: Uuid::from_str(row.try_get("owner_id")?).unwrap(),
-            create_time: DateTime::default(),
+            id: UuidWrapper::from(row.try_get("id")?),
+            owner_id: UuidWrapper::from(row.try_get("owner_id")?),
+            create_time: DateTimeWrapper::default(),
             likes: 1,
             dislikes: 1,
             text: row.try_get("text")?,
@@ -82,8 +90,8 @@ mod tests {
 
     #[tokio::test]
     async fn select_where() {
-        let mut db = DBConnection::new().await;
-        let res = db
+        let res = DBConnection::new()
+            .await
             .select_where::<Post>(vec![(
                 "owner_id",
                 &"b0648b6c-f3a7-4789-bf57-3b44e15029d9".to_owned(),

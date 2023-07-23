@@ -10,12 +10,12 @@ use sqlx::{
     FromRow, Pool, Postgres, Row,
 };
 
-use crate::{Delete, Insert, Select, Table, TableType, ToTableType, Update};
+use crate::{Delete, Insert, Select, Table, TableType, Update, UuidWrapper};
 
 pub struct Vote {
-    pub id: Uuid,
-    pub parent_id: Uuid,
-    pub author_id: Uuid,
+    pub id: UuidWrapper,
+    pub parent_id: UuidWrapper,
+    pub author_id: UuidWrapper,
     pub value: Value,
     pub time: DateTime<Local>,
 }
@@ -62,14 +62,12 @@ impl Table for Vote {
         TableType::Votes
     }
 
-    fn id(&self) -> Uuid {
-        self.id
-    }
-}
-
-impl ToTableType for Vote {
     fn to_table_type() -> TableType {
         TableType::Votes
+    }
+
+    fn id(&self) -> &UuidWrapper {
+        &self.id
     }
 }
 
@@ -80,7 +78,20 @@ impl Insert for Vote {
 
 #[async_trait]
 impl Select for Vote {
-    async fn select(&self, pool: &Pool<Postgres>) {}
+    async fn select_by_id(pool: &Pool<Postgres>, id: &String) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        None
+    }
+
+    async fn select_where(pool: &Pool<Postgres>, query: &str) -> Vec<Self>
+    where
+        Self: Sized,
+
+    {
+        vec![]
+    }
 }
 
 #[async_trait]
@@ -96,9 +107,9 @@ impl Delete for Vote {
 impl<'r> FromRow<'r, PgRow> for Vote {
     fn from_row(row: &PgRow) -> Result<Self, sqlx::Error> {
         Ok(Vote {
-            id: Uuid::from_str(row.try_get("id")?).unwrap(),
-            parent_id: Uuid::from_str(row.try_get("parent_id")?).unwrap(),
-            author_id: Uuid::from_str(row.try_get("author_id")?).unwrap(),
+            id: UuidWrapper::from(row.try_get("id")?),
+            parent_id: UuidWrapper::from(row.try_get("parent_id")?),
+            author_id: UuidWrapper::from(row.try_get("author_id")?),
             value: Value::from_str(row.try_get("value")?).unwrap(),
             time: row.try_get("time")?,
         })

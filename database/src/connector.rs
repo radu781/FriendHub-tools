@@ -5,20 +5,16 @@ use std::{
     fs::{self, File},
     io::{BufRead, BufReader, Write},
     path::Path,
-    str::FromStr,
     vec,
 };
 
 use dotenv::dotenv;
-use serde::{Deserialize, Serialize};
 use sqlx::{
     postgres::{PgPoolOptions, PgRow},
-    query,
-    types::Uuid,
-    FromRow, Pool, Postgres,
+    query, FromRow, Pool, Postgres,
 };
 
-use crate::{Delete, Insert, Table, ToTableType, Update};
+use crate::{Delete, Insert, Select, Table, Update, UuidWrapper};
 
 pub struct DBConnection {
     pool: Pool<Postgres>,
@@ -57,36 +53,27 @@ impl DBConnection {
         Tbl: Table + Insert,
     {
         table.insert(&self.pool).await;
-        self.add(table.table_type(), &table.id())
+        self.add(table.table_type(), table.id())
     }
 
     pub async fn select_by_id<Tbl>(&self, id: &String) -> Option<Tbl>
     where
-        Tbl: Table + Send + Unpin + for<'r> FromRow<'r, PgRow> + ToTableType,
+        Tbl: Table + Send + Unpin + for<'r> FromRow<'r, PgRow> + Select,
     {
-        // TODO: bind here
-        let query = format!("SELECT * FROM {} WHERE id='{}'", Tbl::to_table_type(), id);
-
-        sqlx::query_as::<_, Tbl>(query.as_str())
-            .fetch_optional(&self.pool)
-            .await
-            .unwrap()
+        Tbl::select_by_id(&self.pool, id).await
     }
 
     pub async fn select_where<Tbl>(&self, pairs: Vec<(&'static str, &String)>) -> Vec<Tbl>
     where
-        Tbl: Table + Send + Unpin + for<'r> FromRow<'r, PgRow> + ToTableType,
+        Tbl: Table + Send + Unpin + for<'r> FromRow<'r, PgRow> + Select,
     {
-        let mut query = format!("SELECT * FROM {} WHERE", Tbl::to_table_type());
+        let mut filter = "WHERE".to_owned();
         for (key, val) in pairs {
-            query.push_str(format!(" {key}='{val}' AND").as_str());
+            filter.push_str(format!(" {key}='{val}' AND").as_str());
         }
-        let query = query.trim_end_matches(" AND");
+        let filter = filter.trim_end_matches(" AND");
 
-        sqlx::query_as::<_, Tbl>(query)
-            .fetch_all(&self.pool)
-            .await
-            .unwrap()
+        Tbl::select_where(&self.pool, filter).await
     }
 
     pub async fn update<Tbl>(&self, table: &Tbl)
@@ -101,7 +88,7 @@ impl DBConnection {
         Tbl: Table + Delete,
     {
         table.delete(&self.pool).await;
-        self.delete_cached(table.table_type(), &table.id());
+        self.delete_cached(table.table_type(), table.id());
     }
 
     pub async fn delete_by_id(&mut self, table: TableType, id: &String) {
@@ -109,24 +96,23 @@ impl DBConnection {
             .execute(&self.pool)
             .await
             .unwrap();
-        self.delete_cached(table, &Uuid::from_str(id.as_str()).unwrap());
+        self.delete_cached(table, &UuidWrapper::from(id.clone()))
     }
 
-    fn delete_cached(&mut self, table: TableType, id: &Uuid) {
+    fn delete_cached(&mut self, table: TableType, id: &UuidWrapper) {
         if let Some(v) = self.content.get_mut(&table.to_string()) {
-            v.retain(|e| e.0 == *id);
+            v.retain(|e| e == id);
             if v.is_empty() {
                 self.content.remove(&table.to_string());
             }
         }
     }
 
-    fn add(&mut self, table: TableType, uuid: &Uuid) {
+    fn add(&mut self, table: TableType, uuid: &UuidWrapper) {
         if let Some(v) = self.content.get_mut(&table.to_string()) {
-            v.push(UuidWrapper(*uuid));
+            v.push(uuid.clone());
         } else {
-            self.content
-                .insert(table.to_string(), vec![UuidWrapper(*uuid)]);
+            self.content.insert(table.to_string(), vec![uuid.clone()]);
         }
     }
 }
@@ -135,28 +121,6 @@ impl Drop for DBConnection {
     fn drop(&mut self) {
         let text = serde_json::to_string_pretty(&self.content).expect("serde serialization failed");
         fs::write("created.json", text).expect("failed writing to file");
-    }
-}
-
-pub struct UuidWrapper(Uuid);
-
-impl Serialize for UuidWrapper {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        self.0.to_string().serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for UuidWrapper {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let uuid_str = String::deserialize(deserializer)?;
-        let uuid = Uuid::parse_str(&uuid_str).map_err(serde::de::Error::custom)?;
-        Ok(UuidWrapper(uuid))
     }
 }
 

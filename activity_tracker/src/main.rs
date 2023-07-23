@@ -13,7 +13,7 @@ async fn main() {
     match args.len() {
         1 => {
             println!("{USAGE}");
-            exit(ComputeError::NO_ARGS.into());
+            exit(ComputeError::NoArgs.into());
         }
         2 => {
             let res = compute(&args[0], &args[1]).await;
@@ -24,7 +24,7 @@ async fn main() {
         }
         _ => {
             println!("{USAGE}");
-            exit(ComputeError::NO_ARGS.into());
+            exit(ComputeError::NoArgs.into());
         }
     };
 }
