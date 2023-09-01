@@ -22,7 +22,8 @@
             "args": [],
             "cwd": "${workspaceFolder}",
             "env": {
-                "RUST_BACKTRACE": "1"
+                "RUST_BACKTRACE": "1",
+                "DATABASE_URL": "postgresql://postgres:*K78K7UxsBeNJwC$@139.162.179.73/friendhub"
             },
         }
     ]

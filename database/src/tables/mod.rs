@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{
     postgres::PgRow,
     types::{
-        chrono::{DateTime, Local, NaiveDateTime},
+        chrono::{DateTime, Local, NaiveDateTime, Utc},
         uuid, Uuid,
     },
     Encode, FromRow, Pool, Postgres,
@@ -88,6 +88,19 @@ impl Display for UuidWrapper {
     }
 }
 
+// impl From<String> for UuidWrapper {
+//     fn from(value: String) -> Self {
+//         println!("radu==={value}");
+//         todo!()
+//     }
+// }
+
+// impl From<()> for UuidWrapper {
+//     fn from(value: ()) -> Self {
+//         println!("radu===");
+//         todo!()
+//     }
+// }
 // impl FromStr for UuidWrapper {
 //     type Err = uuid::Error;
 
@@ -109,10 +122,13 @@ impl From<()> for UuidWrapper {
 }
 
 #[derive(PartialEq, Debug, Default)]
-pub struct DateTimeWrapper(pub(crate) DateTime<Local>);
+pub struct DateTimeWrapper(pub(crate) NaiveDateTime);
 
 impl From<NaiveDateTime> for DateTimeWrapper {
     fn from(value: NaiveDateTime) -> Self {
-        Self(DateTime::from_str(value.to_string().as_str()).unwrap())
+        let v = value.to_string();
+        let vv = v.as_str();
+        let d = NaiveDateTime::from_str(vv).unwrap();
+        Self(d)
     }
 }

@@ -3,7 +3,7 @@ use std::{env, process::exit};
 use crate::compute::*;
 mod compute;
 
-const USAGE: &str = r#"Usage: activity_tracker <user_id> <date>
+const USAGE: &str = r#"Usage: activity_tracker <user_id> <date> <sum?>
 - user_id is a UUID (b0648b6c-f3a7-4789-bf57-3b44e15029d9)
 - date uses the format YYYY-MM-DD (2023-05-14)"#;
 
@@ -18,7 +18,21 @@ async fn main() {
         2 => {
             let res = compute(&args[0], &args[1]).await;
             match res {
-                Ok(score) => println!("{score}"),
+                Ok(score) => {
+                    let post = score.post_score;
+                    let vote = score.vote_score;
+                    println!(r#"{{"post":{post}, "vote":{vote}}}"#);
+                }
+                Err(e) => exit(e.into()),
+            }
+        }
+        3 => {
+            let res = compute(&args[0], &args[1]).await;
+            match res {
+                Ok(score) => {
+                    let score = score.sum();
+                    println!("{score}");
+                }
                 Err(e) => exit(e.into()),
             }
         }

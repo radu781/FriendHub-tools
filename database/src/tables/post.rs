@@ -1,5 +1,12 @@
+use std::str::FromStr;
+
 use async_trait::async_trait;
-use sqlx::{postgres::PgRow, query_as, FromRow, Pool, Postgres, Row};
+use sqlx::{
+    postgres::PgRow,
+    query_as,
+    types::{chrono::NaiveDateTime, Uuid},
+    FromRow, Pool, Postgres, Row,
+};
 
 use crate::{DateTimeWrapper, Delete, Insert, Select, Table, TableType, Update, UuidWrapper};
 
@@ -17,7 +24,7 @@ pub struct Post {
 }
 
 impl Table for Post {
-    fn table_type(&self) -> crate::TableType {
+    fn table_type(&self) -> TableType {
         TableType::Posts
     }
 
@@ -51,10 +58,8 @@ impl Select for Post {
     where
         Self: Sized,
     {
-        query_as::<_, Self>(&("SELECT * FROM posts ".to_owned() + query))
-            .fetch_all(pool)
-            .await
-            .unwrap()
+        let q = format!("SELECT * FROM posts {query}");
+        query_as::<_, Self>(&q).fetch_all(pool).await.unwrap()
     }
 }
 
@@ -70,10 +75,17 @@ impl Delete for Post {
 
 impl<'r> FromRow<'r, PgRow> for Post {
     fn from_row(row: &PgRow) -> Result<Self, sqlx::Error> {
+        let s: String = row.try_get("id")?;
+        let id: UuidWrapper = UuidWrapper(Uuid::from_str(s.as_str()).unwrap());
+        let s: String = row.try_get("owner_id")?;
+        let owner_id: UuidWrapper = UuidWrapper(Uuid::from_str(s.as_str()).unwrap());
+        let create_time_str: NaiveDateTime = row.try_get("create_time")?;
+        println!("{create_time_str}");
+
         Ok(Post {
-            id: UuidWrapper::from(row.try_get("id")?),
-            owner_id: UuidWrapper::from(row.try_get("owner_id")?),
-            create_time: DateTimeWrapper::default(),
+            id,
+            owner_id,
+            create_time: DateTimeWrapper(create_time_str),
             likes: 1,
             dislikes: 1,
             text: row.try_get("text")?,
@@ -96,6 +108,25 @@ mod tests {
                 "owner_id",
                 &"b0648b6c-f3a7-4789-bf57-3b44e15029d9".to_owned(),
             )])
+            .await;
+        assert!(!res.is_empty());
+        assert_eq!(
+            res.first().unwrap().owner_id.0.to_string(),
+            "b0648b6c-f3a7-4789-bf57-3b44e15029d9"
+        );
+    }
+
+    #[tokio::test]
+    async fn select_where2() {
+        let res = DBConnection::new()
+            .await
+            .select_where::<Post>(vec![
+                (
+                    "owner_id",
+                    &"b0648b6c-f3a7-4789-bf57-3b44e15029d9".to_owned(),
+                ),
+                ("CAST(create_time AS DATE)", &"2023-05-14".to_owned()),
+            ])
             .await;
         assert!(!res.is_empty());
     }

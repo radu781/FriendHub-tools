@@ -25,16 +25,32 @@ impl From<ComputeError> for i32 {
     }
 }
 
-pub(crate) async fn compute(user_id: &str, day: &str) -> Result<u32, ComputeError> {
+pub(crate) struct ComputeResult {
+    pub(crate) post_score: u32,
+    pub(crate) vote_score: u32,
+}
+
+impl ComputeResult {
+    pub(crate) fn sum(&self) -> u32 {
+        self.post_score + self.vote_score
+    }
+}
+
+pub(crate) async fn compute(user_id: &str, day: &str) -> Result<ComputeResult, ComputeError> {
     let db = DBConnection::new().await;
-    db.select_by_id::<User>(&user_id.to_owned()).await.ok_or(ComputeError::UuidNotFound)?;
+    db.select_by_id::<User>(&user_id.to_owned())
+        .await
+        .ok_or(ComputeError::UuidNotFound)?;
     let computer = Computer {
         db,
         user_id: user_id.to_owned(),
         day: day.to_owned(),
     };
     let res = join!(computer.posts_score(), computer.vote_score());
-    Ok(res.0 + res.1)
+    Ok(ComputeResult {
+        post_score: res.0,
+        vote_score: res.1,
+    })
 }
 
 struct Computer {

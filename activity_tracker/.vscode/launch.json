@@ -19,10 +19,11 @@
                     "kind": "bin"
                 }
             },
-            "args": [],
+            "args": ["b0648b6c-f3a7-4789-bf57-3b44e15029d9", "2023-05-14"],
             "cwd": "${workspaceFolder}",
             "env": {
-                "RUST_BACKTRACE": "1"
+                "RUST_BACKTRACE": "1",
+                "DATABASE_URL": "postgresql://postgres:*K78K7UxsBeNJwC$@139.162.179.73/friendhub"
             },
         }
     ]
