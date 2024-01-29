@@ -8,4 +8,9 @@ edition = "2021"
 [dependencies]
 database = { path = "../database" }
 fake = "2.6.1"
+pyo3 = { version = "0.19.2", features = ["extension-module"] }
 tokio = "1.29.1"
+
+[lib]
+name = "activity_tracker"
+crate-type = ["cdylib"]
