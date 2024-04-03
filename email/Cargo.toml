@@ -1,0 +1,12 @@
+[package]
+name = "email"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.5.4", features = ["derive"] }
+dotenv = "0.15.0"
+lettre = "0.11.6"
+tera = "1.19.1"
