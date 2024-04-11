@@ -1,14 +1,17 @@
+mod emails;
 mod exit_codes;
-mod renderer;
-mod sender;
 
-use clap::{Args, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use dotenv::dotenv;
+use emails::{
+    renderer,
+    types::{BirthdayEmail, NewLoginEmail, PasswordResetEmail, WelcomeEmail},
+};
 use exit_codes::{exit_with_info, Exit};
 use renderer::Renderer;
 use tera::Tera;
 
-use crate::sender::Sender;
+use crate::emails::sender::Sender;
 
 #[derive(Parser)]
 struct Cli {
@@ -19,22 +22,9 @@ struct Cli {
 #[derive(Subcommand)]
 enum EmailType {
     Welcome(WelcomeEmail),
-
-    PasswordReset,
-
-    NewLogin,
-}
-
-#[derive(Args)]
-struct WelcomeEmail {
-    #[arg(long)]
-    full_name: String,
-
-    #[arg(long)]
-    id: String,
-
-    #[arg(long)]
-    to: String,
+    PasswordReset(PasswordResetEmail),
+    NewLogin(NewLoginEmail),
+    Birthday(BirthdayEmail),
 }
 
 fn main() {
@@ -48,6 +38,8 @@ fn main() {
             "password_reset",
             include_str!("../templates/password_reset.jinja2"),
         ),
+        ("newlogin", include_str!("../templates/new_login.jinja2")),
+        ("birthday", include_str!("../templates/birthday.jinja2")),
     ]) {
         exit_with_info(Exit::TemplateLoadFailure(&e));
     }
