@@ -46,7 +46,6 @@ fn main() {
 
     match Renderer::from(args.type_, tera) {
         Ok(file) => {
-            println!("{:?}", file);
             Sender::send(file);
         }
         Err(e) => exit_with_info(Exit::RenderError(&e)),

@@ -56,7 +56,6 @@ impl Renderer {
     ) -> Result<RenderedEmail, tera::Error> {
         let mut context = tera::Context::new();
         context.insert("name", &email.full_name);
-        context.insert("id", &email.id);
         context.insert("country", &email.country);
         context.insert("region", &email.region);
         context.insert("city", &email.city);

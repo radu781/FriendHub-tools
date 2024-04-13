@@ -22,15 +22,15 @@ pub(crate) struct PasswordResetEmail {
 
     #[arg(long)]
     pub(crate) to: String,
+
+    #[arg(long)]
+    pub(crate) token: String,
 }
 
 #[derive(Args)]
 pub(crate) struct NewLoginEmail {
     #[arg(long)]
     pub(crate) full_name: String,
-
-    #[arg(long)]
-    pub(crate) id: String,
 
     #[arg(long)]
     pub(crate) to: String,
