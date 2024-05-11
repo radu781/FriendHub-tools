@@ -5,6 +5,7 @@ pub(crate) enum Exit<'a> {
     TemplateLoadFailure(&'a dyn std::error::Error),
     RenderError(&'a dyn std::error::Error),
     CannotSendEmail(&'a dyn std::error::Error),
+    CannotLoadEnvironment(&'a dyn std::error::Error),
 }
 
 impl<'a> Exit<'a> {
@@ -12,10 +13,11 @@ impl<'a> Exit<'a> {
         match self {
             Exit::Ok => ("Success".to_owned(), 0),
             Exit::TemplateLoadFailure(info) => {
-                (format!("Could not load template files: {}", info), 1)
+                (format!("Could not load template files: {info}"), 1)
             }
-            Exit::RenderError(info) => (format!("Render error: {}", info), 2),
-            Exit::CannotSendEmail(info) => (format!("Could not send email: {}", info), 3),
+            Exit::RenderError(info) => (format!("Render error: {info}"), 2),
+            Exit::CannotSendEmail(info) => (format!("Could not send email: {info}"), 3),
+            Exit::CannotLoadEnvironment(info) => (format!("Could not load .env file: {info}"), 4),
         }
     }
 }

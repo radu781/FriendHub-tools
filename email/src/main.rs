@@ -28,7 +28,10 @@ enum EmailType {
 }
 
 fn main() {
-    dotenv().ok();
+    match dotenv() {
+        Ok(_) => {},
+        Err(e) => exit_with_info(Exit::CannotLoadEnvironment(&e)),
+    };
     let args = Cli::parse();
     let mut tera = Tera::default();
 
