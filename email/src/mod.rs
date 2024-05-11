@@ -1,2 +1,2 @@
-pub(crate) mod exit_codes;
 pub(crate) mod emails;
+pub(crate) mod exit_codes;

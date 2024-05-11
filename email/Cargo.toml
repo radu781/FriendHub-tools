@@ -8,5 +8,5 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
 dotenv = "0.15.0"
-lettre = "0.11.6"
+lettre = "0.11.7"
 tera = "1.19.1"
