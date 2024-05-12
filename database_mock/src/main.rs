@@ -3,7 +3,8 @@ use fake::{Fake, Faker};
 
 #[tokio::main]
 async fn main() {
-    let mut db_connection = DBConnection::new().await;
-    let user = Faker.fake::<User>().adjust();
-    db_connection.insert(&user).await;
+    todo!("faker trait not implemented in database lib")
+    // let mut db_connection = DBConnection::new().await;
+    // let user = Faker.fake::<User>().adjust();
+    // db_connection.insert(&user).await;
 }

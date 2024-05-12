@@ -8,12 +8,13 @@ name = "database"
 path = "src/lib.rs"
 
 [dependencies]
-async-trait = "0.1.68"
+async-trait = "0.1.80"
+chrono = "0.4.38"
 dotenv = "0.15.0"
-fake = { version = "2.6.1", features = [ "derive", "uuid", "chrono", "geo" ] }
+fake = { version = "2.9.2", features = [ "derive", "uuid", "chrono", "geo" ] }
 lazy_static = "1.4.0"
 rand = "0.8.5"
-serde = "1.0.163"
-serde_json = "1.0.96"
-sqlx = { version = "0.7.1", features = [ "runtime-tokio-rustls", "postgres", "time", "chrono", "uuid", "macros", "chrono" ] }
-tokio = { version = "1.28.1", features = [ "full" ] }
+serde = "1.0.201"
+serde_json = "1.0.117"
+sqlx = { version = "0.7.4", features = [ "runtime-tokio-rustls", "postgres", "time", "uuid", "macros", "chrono" ] }
+tokio = { version = "1.37.0", features = [ "full" ] }
