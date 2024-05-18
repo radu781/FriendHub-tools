@@ -9,7 +9,7 @@ pub(crate) struct Sender {}
 
 impl Sender {
     pub(crate) fn send(rendered_email: RenderedEmail) {
-        let msg = Message::builder()
+        let msg = match Message::builder()
             .from(
                 format!("FriendHub mail <{}>", env::var("sender_email").unwrap())
                     .parse()
@@ -19,13 +19,16 @@ impl Sender {
             .subject(rendered_email.subject)
             .header(ContentType::TEXT_HTML)
             .body(rendered_email.body_html)
-            .unwrap();
+        {
+            Ok(m) => m,
+            Err(e) => exit_with_info(Exit::CannotCreateMessageBuilder(&e)),
+        };
         let creds = Credentials::new(
             env::var("sender_email").unwrap(),
             env::var("sender_password").unwrap(),
         );
         let mailer = SmtpTransport::relay("smtp.gmail.com")
-            .unwrap()
+            .unwrap_or_else(|e| exit_with_info(Exit::SmtpRelay(&e)))
             .credentials(creds)
             .build();
         match mailer.send(&msg) {

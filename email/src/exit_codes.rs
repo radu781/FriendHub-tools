@@ -6,6 +6,8 @@ pub(crate) enum Exit<'a> {
     RenderError(&'a dyn std::error::Error),
     CannotSendEmail(&'a dyn std::error::Error),
     CannotLoadEnvironment(&'a dyn std::error::Error),
+    CannotCreateMessageBuilder(&'a dyn std::error::Error),
+    SmtpRelay(&'a dyn std::error::Error),
 }
 
 impl<'a> Exit<'a> {
@@ -18,6 +20,13 @@ impl<'a> Exit<'a> {
             Exit::RenderError(info) => (format!("Render error: {info}"), 2),
             Exit::CannotSendEmail(info) => (format!("Could not send email: {info}"), 3),
             Exit::CannotLoadEnvironment(info) => (format!("Could not load .env file: {info}"), 4),
+            Exit::CannotCreateMessageBuilder(info) => {
+                (format!("Could not create message builder: {info}"), 5)
+            }
+            Exit::SmtpRelay(info) => (
+                format!("Could not create encrypted transport layer: {info}"),
+                6,
+            ),
         }
     }
 }
