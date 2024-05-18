@@ -36,9 +36,9 @@ impl DBConnection {
         Self {
             pool: PgPoolOptions::new()
                 .max_connections(3)
-                .connect(&env::var("DATABASE_URL").unwrap())
+                .connect(&env::var("DATABASE_URL").expect("environment variable DATABASE_URL missing"))
                 .await
-                .unwrap(),
+                .expect("failed to connect"),
             content: serde_json::from_str(if content.is_empty() {
                 "{}"
             } else {
@@ -129,6 +129,7 @@ pub enum TableType {
     Posts,
     Users,
     Votes,
+    Messages,
 }
 
 impl Display for TableType {
@@ -141,6 +142,7 @@ impl Display for TableType {
                 TableType::Posts => "posts",
                 TableType::Users => "users",
                 TableType::Votes => "votes",
+                TableType::Messages => "messages",
             }
         )
     }

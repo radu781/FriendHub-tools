@@ -17,11 +17,13 @@ pub mod comment;
 pub mod post;
 pub mod user;
 pub mod vote;
+pub mod message;
 
 pub use comment::*;
 pub use post::*;
 pub use user::*;
 pub use vote::*;
+pub use message::*;
 
 pub trait Adjust {
     fn adjust(self) -> Self;
@@ -120,6 +122,26 @@ impl From<()> for UuidWrapper {
         Self(Uuid::default())
     }
 }
+
+impl Default for UuidWrapper {
+    fn default() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl PartialOrd for UuidWrapper {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.to_string().partial_cmp(&other.to_string())
+    }
+}
+
+impl Ord for UuidWrapper {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.to_string().cmp(&other.to_string())
+    }
+}
+
+impl Eq for UuidWrapper { }
 
 #[derive(PartialEq, Debug, Default)]
 pub struct DateTimeWrapper(pub(crate) NaiveDateTime);
