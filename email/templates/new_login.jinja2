@@ -1,27 +1,84 @@
-Dear {{ name }},
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="keywords" content="Social media" />
+    <meta name="author" content="Radu-Alexandru Popa" />
+    <meta name="description" content="Simple social media web application" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- <link data-trunk rel="copy-dir" href="assets" /> -->
+    <link rel="icon" type="image/x-icon" href="http://localhost/assets/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bitter:ital@0;1&display=swap" rel="stylesheet">
+    <title>FriendHub</title>
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: "Bitter", serif;
+            font-optical-sizing: auto;
+            font-weight: 400;
+            font-style: normal;
+            font-size: 16px;
+            color: white;
+        }
+        a {
+            text-decoration: none;
+        }
+        a:visited {
+            color: white;
+        }
+        
+        html {
+            background-color: #2E294E;
+        }
+        
+        ul {
+            list-style: none;
+        }
+        p {
+            margin: 1rem;
+            color:white;
+        }
+        h1 {
+            margin: 1rem;
+            font-size: 28px;
+            font-weight: 800;
+        }
+        
+    </style>
+</head>
+
+<body style="background-color: #2E294E; color: white;">
+
+<div style="display: flex; flex-direction: row;">
+    <h1 style="color: #3b9180">FriendHub</h1>
+</div>
+
+<div style="width: 50%;">
+<p style="margin: 1rem">Dear {{ name }},</p>
 <p>We wanted to let you know that a sign-in to your FriendHub account was detected from a new device from {{ country }}, {{ region }}, {{ city }} from {{ isp }} network. Your account security is important to us, so we wanted to alert you to this activity.</p>
 
 <p>If this sign-in was you, you can disregard this email. However, if you didn't recently sign in from a new device, we recommend taking immediate action to secure your account.</p>
 
-
 <p>Here are some steps you can take:</p>
-
 
 <p>    Change Your Password: Consider changing your password immediately. Choose a strong and unique password to help protect your account from unauthorized access.</p>
 
 
-<p>    Review Account Activity: Take a moment to review your recent account activity for any suspicious or unfamiliar logins. You can do this by visiting your account settings and checking the "Login Activity" section. (TODO: link here)</p>
-
-
-<p>    Enable Two-Factor Authentication: Enhance the security of your account by enabling two-factor authentication (2FA). This adds an extra layer of protection by requiring a code in addition to your password to log in. (TODO: link here)</p>
-
-
 <p>If you believe your account has been compromised or if you have any questions or concerns, please contact our support team immediately at support@friendhub.net.</p>
-
 
 <p>Thank you for your attention to this matter. We're committed to keeping your account safe and secure.</p>
 
-
 <p>Best regards,</p>
 <p>The FriendHub Team</p>
+</div>
+</body>
+
+</html>

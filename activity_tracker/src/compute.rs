@@ -10,6 +10,9 @@ const REPLY_WEIGHT: u32 = 2;
 const STORY_WEIGHT: u32 = 10;
 const PHOTO_PROFILE_WEIGHT: u32 = 30;
 const PHOTO_BANNER_WEIGHT: u32 = 20;
+// TODO: comment chain: in a day >3 replies to a comment
+// TODO: number of groups joined
+// TODO: add streaks
 
 pub enum ComputeError {
     UuidNotFound,
@@ -28,6 +31,7 @@ impl From<ComputeError> for i32 {
 pub(crate) struct ComputeResult {
     pub(crate) post_score: u32,
     pub(crate) vote_score: u32,
+    pub(crate) friend_add_score: u32,
 }
 
 impl ComputeResult {
@@ -46,10 +50,16 @@ pub(crate) async fn compute(user_id: &str, day: &str) -> Result<ComputeResult, C
         user_id: user_id.to_owned(),
         day: day.to_owned(),
     };
-    let res = join!(computer.posts_score(), computer.vote_score());
+
+    let res = join!(
+        computer.posts_score(),
+        computer.vote_score(),
+        computer.friend_add_score()
+    );
     Ok(ComputeResult {
         post_score: res.0,
         vote_score: res.1,
+        friend_add_score: res.2,
     })
 }
 
@@ -86,5 +96,9 @@ impl Computer {
             }
         });
         upvote_score * VOTE_UPVOTE_WEIGHT + downvote_score * VOTE_DOWNVOTE_WEIGHT
+    }
+
+    async fn friend_add_score(&self) -> u32 {
+        todo!()
     }
 }

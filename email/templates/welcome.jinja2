@@ -1,18 +1,88 @@
-Dear {{ name }},
+<!DOCTYPE html>
+<html lang="en">
 
-Welcome to FriendHub! 🎉 We're thrilled to have you join our vibrant community of [TODO: number here] users worldwide.
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="keywords" content="Social media" />
+    <meta name="author" content="Radu-Alexandru Popa" />
+    <meta name="description" content="Simple social media web application" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- <link data-trunk rel="copy-dir" href="assets" /> -->
+    <link rel="icon" type="image/x-icon" href="http://localhost/assets/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bitter:ital@0;1&display=swap" rel="stylesheet">
+    <title>FriendHub</title>
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: "Bitter", serif;
+            font-optical-sizing: auto;
+            font-weight: 400;
+            font-style: normal;
+            font-size: 16px;
+        }
+        a {
+            text-decoration: none;
+        }
+        a:visited {
+            color: white;
+        }
+        
+        html {
+            background-color: #2E294E;
+        }
+        
+        ul {
+            list-style: none;
+        }
+        p {
+            margin: 1rem;
+        }
+        h1 {
+            margin: 1rem;
+            font-size: 28px;
+            font-weight: 800;
+        }
+        
+    </style>
+</head>
 
-At FriendHub, we're all about connecting people, sharing experiences, and building meaningful connections. Whether you're here to connect with friends, discover new interests, or showcase your talents, we've got you covered.
+<body style="background-color: #2E294E; color: white;">
 
-Here are a few things you can do to get started:
+<div style="display: flex; flex-direction: row;">
+    <h1 style="color: #3b9180">FriendHub</h1>
+</div>
 
-    Complete your profile: Add a profile picture, fill out your bio, and let others know what makes you unique here: [TODO]
-    Explore our features: Discover trending topics, join groups, and start engaging conversations.
-    Connect with others: Find friends, follow interesting people, and expand your network.
+<div style="width: 50%;">
+    <p style="margin: 1rem">Dear {{ name }},</p>
 
-Got questions or need assistance? Our support team is here to help! Feel free to reach out to us at support@friendhub.net.
+    <p style="margin: 1rem"><span style="color: #FCD0A1;">Welcome to FriendHub!</span> 🎉 We're thrilled to have you join our vibrant community
+    of worldwide users.</p>
 
-Thank you for choosing FriendHub. We can't wait to see what you'll bring to our community!
+    <p style="margin: 1rem">At FriendHub, we're all about connecting people, sharing experiences, and building meaningful connections.
+    Whether you're here to connect with friends, discover new interests, or showcase your talents, we've got you covered.</p>
 
-Best regards,
-The FriendHub Team
+    <p style="margin: 1rem">Here are a few things you can do to get started:</p>
+
+        <ul style="margin: 1rem">
+        <li>Complete your profile: Add a profile picture, fill out your bio, and let others know what makes you unique here.</li>
+        <li>Explore our features: Discover trending topics, and start engaging conversations.</li>
+        <li>Connect with others: Find friends, follow interesting people, and expand your network.</li>
+        </ul>
+
+    <p style="margin: 1rem">Got questions or need assistance? Our support team is here to help! Feel free to reach out to us at support@friendhub.net.</p>
+
+    <p style="margin: 1rem">Thank you for choosing FriendHub. We can't wait to see what you'll bring to our community!</p>
+
+    <p style="margin: 1rem">Best regards,</p>
+    <p style="margin: 1rem">The FriendHub Team</p>
+</div>
+</body>
+
+</html>

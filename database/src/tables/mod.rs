@@ -1,6 +1,7 @@
 use std::{default, fmt::Display, str::FromStr};
 
 use async_trait::async_trait;
+use fake::Dummy;
 use serde::{Deserialize, Serialize};
 use sqlx::{
     postgres::PgRow,
@@ -61,7 +62,7 @@ pub trait Delete {
     async fn delete(&self, pool: &Pool<Postgres>);
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Dummy)]
 pub struct UuidWrapper(pub(crate) Uuid);
 
 impl Serialize for UuidWrapper {

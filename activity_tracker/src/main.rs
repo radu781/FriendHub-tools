@@ -1,3 +1,5 @@
+// TODO: make it async for ALL users on a certain day
+
 use std::{env, process::exit};
 
 use crate::compute::*;

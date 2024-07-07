@@ -1,27 +1,47 @@
 use async_trait::async_trait;
+use fake::{
+    faker::address::en::*, faker::chrono::en::*, faker::internet::en::*, faker::name::en::*, Dummy,
+    Fake, Faker,
+};
+use rand::Rng;
 use sqlx::postgres::PgRow;
 use sqlx::types::chrono::NaiveDateTime;
 use sqlx::{query, query_as, FromRow, Pool, Postgres, Row};
 
-use crate::{
-    Adjust, Delete, Insert, Select, Table, TableType, Update, UuidWrapper,
-};
+use crate::{Adjust, Delete, Insert, Select, Table, TableType, Update, UuidWrapper};
 
-#[derive(Debug)]
+#[derive(Debug, Dummy)]
 pub struct User {
     id: UuidWrapper,
+
+    #[dummy(faker = "FirstName()")]
     first_name: String,
     middle_name: Option<String>,
+
+    #[dummy(faker = "LastName()")]
     last_name: String,
+
+    #[dummy(faker = "DateTime()")]
     join_time: NaiveDateTime,
+
+    #[dummy(faker = "CountryName()")]
     country: Option<String>,
+
+    #[dummy(faker = "CityName()")]
     city: Option<String>,
+
     education: Option<String>,
     extra: Option<String>,
     profile_picture: Option<String>,
     banner_picture: Option<String>,
+
+    #[dummy(faker = "SafeEmail()")]
     email: String,
+
+    #[dummy(faker = "Password(8..16)")]
     password: String,
+
+    #[dummy(faker = "2..256")]
     permissions: Option<String>,
 }
 
